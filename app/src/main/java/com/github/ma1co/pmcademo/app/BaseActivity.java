@@ -81,6 +81,8 @@ public class BaseActivity extends Activity {
                 return onMovieKeyDown();
             case ScalarInput.ISV_KEY_CUSTOM1:
                 return onC1KeyDown();
+            case ScalarInput.ISV_KEY_CUSTOM2:
+                return onC2KeyDown();
             case ScalarInput.ISV_KEY_DELETE:
             case ScalarInput.ISV_KEY_SK2:
                 return onDeleteKeyDown();
@@ -139,6 +141,8 @@ public class BaseActivity extends Activity {
                 return onMovieKeyUp();
             case ScalarInput.ISV_KEY_CUSTOM1:
                 return onC1KeyUp();
+            case ScalarInput.ISV_KEY_CUSTOM2:
+                return onC2KeyUp();
             case ScalarInput.ISV_KEY_DELETE:
             case ScalarInput.ISV_KEY_SK2:
                 return onDeleteKeyUp();
@@ -187,6 +191,8 @@ public class BaseActivity extends Activity {
     protected boolean onMovieKeyUp() { return false; }
     protected boolean onC1KeyDown() { return false; }
     protected boolean onC1KeyUp() { return false; }
+    protected boolean onC2KeyDown() { return false; }
+    protected boolean onC2KeyUp() { return false; }
     protected boolean onLensAttached() { return false; }
     protected boolean onLensDetached() { return false; }
     protected boolean onUpperDialChanged(int value) { return false; }

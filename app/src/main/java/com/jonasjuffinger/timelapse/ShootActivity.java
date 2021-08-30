@@ -2,16 +2,23 @@ package com.jonasjuffinger.timelapse;
 
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.Cursor;
 import android.hardware.Camera;
+import android.media.ExifInterface;
 import android.os.BatteryManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.MediaStore;
+import android.content.Context;
+import android.util.Pair;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.github.ma1co.openmemories.framework.ImageInfo;
+import com.github.ma1co.openmemories.framework.MediaManager;
 import com.github.ma1co.pmcademo.app.BaseActivity;
 
 import com.sony.scalar.hardware.CameraEx;
@@ -20,13 +27,14 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class ShootActivity extends BaseActivity implements SurfaceHolder.Callback, CameraEx.ShutterListener
-{
+import static java.lang.Math.round;
+
+public class ShootActivity extends BaseActivity implements SurfaceHolder.Callback, CameraEx.ShutterListener {
     private Settings settings;
 
     private int shotCount;
 
-    private TextView tvCount, tvBattery, tvRemaining;
+    private TextView tvCount, tvBattery, tvRemaining, tvVideoLen, tvAperature, tvShutterSpeed, tvIso, tvLastIso;
     private LinearLayout llEnd;
 
     private SurfaceView reviewSurfaceView;
@@ -47,33 +55,30 @@ public class ShootActivity extends BaseActivity implements SurfaceHolder.Callbac
 
     static private final boolean SHOW_END_SCREEN = true;
 
-    int getcnt(){
-        if(settings.brs){
+    int getcnt() {
+        if (settings.brs) {
             return 3;
         }
         return 1;
     }
 
     private Handler shootRunnableHandler = new Handler();
-    private final Runnable shootRunnable = new Runnable()
-    {
+    private final Runnable shootRunnable = new Runnable() {
         @Override
-        public void run()
-        {
-            if(stopPicturePreview) {
+        public void run() {
+            if (stopPicturePreview) {
                 stopPicturePreview = false;
                 camera.stopPreview();
                 reviewSurfaceView.setVisibility(View.GONE);
-                if(settings.displayOff)
+                if (settings.displayOff)
                     display.off();
             }
 
-            if(burstShooting) {
+            if (burstShooting) {
                 shoot();
-            }
-            else if(shotCount < settings.shotCount * getcnt()) {
-                long remainingTime = Math.round(shootTime + settings.interval * 1000 - System.currentTimeMillis());
-                if(brck.get()>0){
+            } else if (shotCount < settings.shotCount * getcnt()) {
+                long remainingTime = round(shootTime + settings.interval * 1000 - System.currentTimeMillis());
+                if (brck.get() > 0) {
                     remainingTime = -1;
                 }
 
@@ -84,7 +89,7 @@ public class ShootActivity extends BaseActivity implements SurfaceHolder.Callbac
                     shoot();
                     display.on();
                 } else {
-                    shootRunnableHandler.postDelayed(this, remainingTime-150);
+                    shootRunnableHandler.postDelayed(this, remainingTime - 150);
                 }
             }
             else {
@@ -92,13 +97,12 @@ public class ShootActivity extends BaseActivity implements SurfaceHolder.Callbac
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        if(SHOW_END_SCREEN) {
+                        if (SHOW_END_SCREEN) {
                             tvCount.setText("Thanks for using this app!");
                             tvBattery.setVisibility(View.INVISIBLE);
                             tvRemaining.setVisibility(View.INVISIBLE);
                             llEnd.setVisibility(View.VISIBLE);
-                        }
-                        else {
+                        } else {
                             onBackPressed();
                         }
                     }
@@ -132,6 +136,11 @@ public class ShootActivity extends BaseActivity implements SurfaceHolder.Callbac
         tvCount = (TextView) findViewById(R.id.tvCount);
         tvBattery = (TextView) findViewById(R.id.tvBattery);
         tvRemaining = (TextView) findViewById(R.id.tvRemaining);
+        tvVideoLen = (TextView) findViewById(R.id.tvVideoLen);
+        tvAperature = (TextView) findViewById(R.id.tvAperature);
+        tvShutterSpeed = (TextView) findViewById(R.id.tvShutterSpeed);
+        tvIso = (TextView) findViewById(R.id.tvIso);
+        tvLastIso = (TextView) findViewById(R.id.tvLastIso);
         llEnd = (LinearLayout) findViewById(R.id.llEnd);
 
         reviewSurfaceView = (SurfaceView) findViewById(R.id.surfaceView);
@@ -139,6 +148,8 @@ public class ShootActivity extends BaseActivity implements SurfaceHolder.Callbac
         cameraSurfaceHolder = reviewSurfaceView.getHolder();
         cameraSurfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
     }
+
+    private CameraEx.ParametersModifier modifier;
 
 
     @Override
@@ -156,18 +167,17 @@ public class ShootActivity extends BaseActivity implements SurfaceHolder.Callbac
         final Camera.Parameters params = cameraEx.getNormalCamera().getParameters();
 
         try {
-            if(settings.mf)
+            if (settings.mf)
                 params.setFocusMode(CameraEx.ParametersModifier.FOCUS_MODE_MANUAL);
             else
                 params.setFocusMode("auto");
+        } catch (Exception ignored) {
         }
-        catch(Exception ignored)
-        {}
 
 
-        final CameraEx.ParametersModifier modifier = cameraEx.createParametersModifier(params);
+        modifier = cameraEx.createParametersModifier(params);
 
-        if(burstShooting) {
+        if (burstShooting) {
             try {
                 modifier.setDriveMode(CameraEx.ParametersModifier.DRIVE_MODE_BURST);
                 List driveSpeeds = modifier.getSupportedBurstDriveSpeeds();
@@ -175,37 +185,38 @@ public class ShootActivity extends BaseActivity implements SurfaceHolder.Callbac
                 modifier.setBurstDriveButtonReleaseBehave(CameraEx.ParametersModifier.BURST_DRIVE_BUTTON_RELEASE_BEHAVE_CONTINUE);
             } catch (Exception ignored) {
             }
-        }
-        else {
+        } else {
             modifier.setDriveMode(CameraEx.ParametersModifier.DRIVE_MODE_SINGLE);
         }
+
+        log("ExposureCompensation: " + params.getExposureCompensation());
+        log("Aperature: " + modifier.getAperture());
+        log("ShutterSpeed: " + modifier.getShutterSpeed().first + " / " + modifier.getShutterSpeed().second);
+        log("ISO: " + modifier.getISOSensitivity());
 
         // setSilentShutterMode doesn't exist on all cameras
         try {
             modifier.setSilentShutterMode(settings.silentShutter);
+        } catch (NoSuchMethodError ignored) {
         }
-        catch(NoSuchMethodError ignored)
-        {}
 
-        try{
+        try {
             //add also AEL if set
-            if(settings.ael) {
+            if (settings.ael) {
                 modifier.setAutoExposureLock(CameraEx.ParametersModifier.AE_LOCK_ON);
             }
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             //do nothing
         }
 
-        if(settings.brs){
-            try{
+        if (settings.brs) {
+            try {
                 modifier.setDriveMode(CameraEx.ParametersModifier.DRIVE_MODE_BRACKET);
                 modifier.setBracketMode(CameraEx.ParametersModifier.BRACKET_MODE_EXPOSURE);
                 modifier.setExposureBracketMode(CameraEx.ParametersModifier.EXPOSURE_BRACKET_MODE_SINGLE);
                 modifier.setExposureBracketPeriod(30);
                 modifier.setNumOfBracketPicture(3);
-            }
-            catch (Exception e){
+            } catch (Exception e) {
                 //do nothing
             }
         }
@@ -220,19 +231,19 @@ public class ShootActivity extends BaseActivity implements SurfaceHolder.Callbac
         shootRunnableHandler.postDelayed(shootRunnable, (long) settings.delay * 1000 * 60);
         shootStartTime = System.currentTimeMillis() + settings.delay * 1000 * 60;
 
-        if(burstShooting) {
+        if (burstShooting) {
             manualShutterCallbackCallRunnableHandler.postDelayed(manualShutterCallbackCallRunnable, 500);
         }
 
         display = new Display(getDisplayManager());
 
-        if(settings.displayOff) {
+        if (settings.displayOff) {
             display.turnAutoOff(5000);
         }
 
         setAutoPowerOffMode(false);
 
-        tvCount.setText(Integer.toString(shotCount)+"/"+Integer.toString(settings.shotCount * getcnt()));
+        tvCount.setText(Integer.toString(shotCount) + "/" + Integer.toString(settings.shotCount * getcnt()));
         tvRemaining.setText(getRemainingTime());
         tvBattery.setText(getBatteryPercentage());
     }
@@ -254,7 +265,7 @@ public class ShootActivity extends BaseActivity implements SurfaceHolder.Callbac
 
         shootRunnableHandler.removeCallbacks(shootRunnable);
 
-        if(cameraSurfaceHolder == null)
+        if (cameraSurfaceHolder == null)
             log("cameraSurfaceHolder == null");
         else {
             cameraSurfaceHolder.removeCallback(this);
@@ -262,14 +273,14 @@ public class ShootActivity extends BaseActivity implements SurfaceHolder.Callbac
 
         autoReviewControl = null;
 
-        if(camera == null)
+        if (camera == null)
             log("camera == null");
         else {
             camera.stopPreview();
             camera = null;
         }
 
-        if(cameraEx == null)
+        if (cameraEx == null)
             log("cameraEx == null");
         else {
             cameraEx.setAutoPictureReviewControl(null);
@@ -280,18 +291,17 @@ public class ShootActivity extends BaseActivity implements SurfaceHolder.Callbac
         setAutoPowerOffMode(true);
     }
 
-
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         try {
             camera = cameraEx.getNormalCamera();
             camera.setPreviewDisplay(holder);
+        } catch (IOException e) {
         }
-        catch (IOException e) {}
     }
 
     private void shoot() {
-        if(takingPicture)
+        if (takingPicture)
             return;
 
         shootTime = System.currentTimeMillis();
@@ -300,15 +310,67 @@ public class ShootActivity extends BaseActivity implements SurfaceHolder.Callbac
 
         shotCount++;
 
+        updateDisplay();
+    }
+
+    private void updateDisplay() {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                tvCount.setText(Integer.toString(shotCount)+"/"+Integer.toString(settings.shotCount * getcnt()));
+
+                final Camera.Parameters params = cameraEx.getNormalCamera().getParameters();
+                modifier = cameraEx.createParametersModifier(params);
+
+                tvCount.setText(String.format("%s/%s", Integer.toString(shotCount), Integer.toString(settings.shotCount * getcnt())));
                 tvRemaining.setText(getRemainingTime());
                 tvBattery.setText(getBatteryPercentage());
+
+                String strValue;
+                if (settings.fps != 0)
+                    strValue = String.valueOf(round(10 * (double) shotCount / settings.fps) / 10);
+                else
+                    strValue = String.valueOf(round(10 * (double) shotCount / 24) / 10);
+                tvVideoLen.setText(String.format("%s Seconds", strValue));
+
+                tvAperature.setText(String.valueOf((double) modifier.getAperture() / 100));
+
+                final Pair ss = modifier.getShutterSpeed();
+                log("First: " + ss.first);
+                log("Second: " + ss.second);
+                if (Integer.decode(ss.second + "") == 1)
+                    tvShutterSpeed.setText(ss.first + "\"");
+                else if (Integer.decode(ss.first + "") > 1 && Integer.decode(ss.second + "") > 1)
+                    tvShutterSpeed.setText(String.valueOf((double) round(10 * (double) Integer.decode(ss.first + "") / Integer.decode(ss.second + "")) / 10));
+                else
+                    tvShutterSpeed.setText(ss.first.toString() + "/" + ss.second.toString());
+
+                tvIso.setText(getISO());
+
+                try {
+                    MediaManager mediaManager = MediaManager.create(getApplicationContext());
+
+                    Cursor imagesCursor = mediaManager.queryNewestImages();
+                    imagesCursor.moveToNext();
+                    ImageInfo lastImageInfo = mediaManager.getImageInfo(imagesCursor);
+
+                    tvLastIso.setText("" + lastImageInfo.getIso());
+                } catch(Exception e) {
+                    Logger.error(e.getMessage());
+                }
+
             }
         });
     }
+
+    String getISO() {
+        int iso = modifier.getISOSensitivity();
+
+        if (iso == 0)
+            return "AUTO";
+
+        return String.valueOf(iso);
+    }
+
 
     private AtomicInteger brck = new AtomicInteger(0);
 
@@ -318,14 +380,14 @@ public class ShootActivity extends BaseActivity implements SurfaceHolder.Callbac
     @Override
     public void onShutter(int i, CameraEx cameraEx) {
 
-        if(brck.get()<0){
+        if (brck.get() < 0) {
             brck = new AtomicInteger(0);
-            if(getcnt()>1) {
+            if (getcnt() > 1) {
                 brck = new AtomicInteger(2);
             }
         }
 
-        if(burstShooting) {
+        if (burstShooting) {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -344,23 +406,20 @@ public class ShootActivity extends BaseActivity implements SurfaceHolder.Callbac
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        if(SHOW_END_SCREEN) {
+                        if (SHOW_END_SCREEN) {
                             tvCount.setText("Thanks for using this app!");
                             tvBattery.setVisibility(View.INVISIBLE);
                             tvRemaining.setVisibility(View.INVISIBLE);
                             llEnd.setVisibility(View.VISIBLE);
-                        }
-                        else {
+                        } else {
                             onBackPressed();
                         }
                     }
                 });
-            }
-            else {
+            } else {
                 manualShutterCallbackCallRunnableHandler.postDelayed(manualShutterCallbackCallRunnable, 500);
             }
-        }
-        else {
+        } else {
             this.cameraEx.cancelTakePicture();
 
             //camera.startPreview();
@@ -382,7 +441,7 @@ public class ShootActivity extends BaseActivity implements SurfaceHolder.Callbac
                 }
                 // show the preview picture for some time
                 else {
-                    long previewPictureShowTime = Math.round(Math.min(remainingTime, pictureReviewTime * 1000));
+                    long previewPictureShowTime = round(Math.min(remainingTime, pictureReviewTime * 1000));
                     log("  Stop preview in: " + previewPictureShowTime);
                     reviewSurfaceView.setVisibility(View.VISIBLE);
                     stopPicturePreview = true;
@@ -395,8 +454,7 @@ public class ShootActivity extends BaseActivity implements SurfaceHolder.Callbac
         }
     }
 
-    private String getBatteryPercentage()
-    {
+    private String getBatteryPercentage() {
         IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
         Intent batteryStatus = registerReceiver(null, ifilter);
 
@@ -411,17 +469,17 @@ public class ShootActivity extends BaseActivity implements SurfaceHolder.Callbac
                 chargePlug == BatteryManager.BATTERY_PLUGGED_AC;
 
         String s = "";
-        if(isCharging)
+        if (isCharging)
             s = "c ";
 
-        return s + (int)(level / (float)scale * 100) + "%";
+        return s + (int) (level / (float) scale * 100) + "%";
     }
 
     private String getRemainingTime() {
-        if(burstShooting)
-            return "" + Math.round((settings.shotCount * 1000 - System.currentTimeMillis() + shootStartTime) / 1000) + "s";
+        if (burstShooting)
+            return "" + round((settings.shotCount * 1000 - System.currentTimeMillis() + shootStartTime) / 1000) + "s";
         else
-            return "" + Math.round((settings.shotCount * getcnt() - shotCount) * settings.interval / 60) + "min";
+            return "" + round((settings.shotCount * getcnt() - shotCount) * settings.interval / 60) + "min";
     }
 
     @Override
@@ -431,14 +489,15 @@ public class ShootActivity extends BaseActivity implements SurfaceHolder.Callbac
 
 
     @Override
-    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {}
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+    }
 
     @Override
-    public void surfaceDestroyed(SurfaceHolder holder) {}
+    public void surfaceDestroyed(SurfaceHolder holder) {
+    }
 
     @Override
-    protected void setColorDepth(boolean highQuality)
-    {
+    protected void setColorDepth(boolean highQuality) {
         super.setColorDepth(false);
     }
 
@@ -450,16 +509,117 @@ public class ShootActivity extends BaseActivity implements SurfaceHolder.Callbac
     private void dumpList(List list, String name) {
         log(name);
         log(": ");
-        if (list != null)
-        {
-            for (Object o : list)
-            {
+        if (list != null) {
+            for (Object o : list) {
                 log(o.toString());
                 log(" ");
             }
-        }
-        else
+        } else
             log("null");
         log("\n");
     }
+
+
+    @Override
+    protected boolean onUpperDialChanged(int value) {
+        log("onUpperDialChanged: " + value);
+
+        if (value == -1)
+            cameraEx.decrementAperture();
+        else if (value == 1)
+            cameraEx.incrementAperture();
+
+        updateDisplay();
+
+        return true;
+    }
+
+    @Override
+    protected boolean onLowerDialChanged(int value) {
+        log("onLowerDialChanged: " + value);
+
+        if (value == -1)
+            cameraEx.decrementShutterSpeed();
+        else if (value == 1)
+            cameraEx.incrementShutterSpeed();
+
+        updateDisplay();
+
+        return true;
+    }
+
+    @Override
+    protected boolean onC1KeyDown() {
+        cameraEx.incrementAperture();
+        updateDisplay();
+        return true;
+    }
+
+    @Override
+    protected boolean onC2KeyDown() {
+        cameraEx.decrementAperture();
+        updateDisplay();
+        return true;
+    }
+
+    @Override
+    protected boolean onLeftKeyDown() {
+        cameraEx.decrementShutterSpeed();
+        updateDisplay();
+        return true;
+    }
+
+    @Override
+    protected boolean onRightKeyDown() {
+        cameraEx.incrementShutterSpeed();
+        updateDisplay();
+        return true;
+    }
+
+    @Override
+    protected boolean onUpKeyDown() {
+        modifier = cameraEx.createParametersModifier(cameraEx.getNormalCamera().getParameters());
+        int iso = modifier.getISOSensitivity();
+
+        if (iso == 0) {
+            modifier.setISOSensitivity(100);
+        } else {
+            try {
+                modifier.setISOSensitivity(2 * iso);
+            } catch (Exception e) {
+                Logger.error(e.getMessage());
+            }
+        }
+
+        updateDisplay();
+        return true;
+    }
+
+    @Override
+    protected boolean onDownKeyDown() {
+        modifier = cameraEx.createParametersModifier(cameraEx.getNormalCamera().getParameters());
+        int iso = modifier.getISOSensitivity();
+        
+        if (iso == 100) {
+            modifier.setISOSensitivity(0);
+        } else {
+            try {
+                modifier.setISOSensitivity(iso / 2);
+            } catch (Exception e) {
+                Logger.error(e.getMessage());
+            }
+        }
+
+        updateDisplay();
+        return true;
+    }
+/*
+    @Override
+    protected boolean onAelKeyDown() {
+        modifier = cameraEx.createParametersModifier(cameraEx.getNormalCamera().getParameters());
+        modifier.setAutoExposureLock(CameraEx.ParametersModifier.AE_LOCK_ON);
+        updateDisplay();
+        return true;
+    }
+*/
 }

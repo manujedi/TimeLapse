@@ -4,17 +4,17 @@
     android:id="@+id/activity_shoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingBottom="0dp"
     android:paddingLeft="0dp"
-    android:paddingRight="0dp"
     android:paddingTop="0dp"
+    android:paddingRight="0dp"
+    android:paddingBottom="0dp"
     tools:context="com.jonasjuffinger.timelapse.ShootActivity">
 
     <SurfaceView
+        android:id="@+id/surfaceView"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:layout_centerInParent="true"
-        android:id="@+id/surfaceView" />
+        android:layout_centerInParent="true" />
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -24,21 +24,71 @@
             android:id="@+id/tvCount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp"
             android:layout_marginLeft="10dp"
-            android:layout_marginTop="5dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp"
+            android:layout_toRightOf="@+id/tvCount_label"
             android:text="0"
-            android:textSize="40sp" />
+            android:textSize="30sp" />
+
+        <TextView
+            android:id="@+id/tvCount_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp"
+            android:text="Shots: "
+            android:textSize="30sp" />
+
+        <TextView
+            android:id="@+id/tvRemaining_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="15dp"
+            android:layout_marginTop="70dp"
+            android:text="Remaining:"
+            android:textSize="20sp" />
 
         <TextView
             android:id="@+id/tvRemaining"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignTop="@+id/tvCount"
-            android:layout_marginLeft="30dp"
+            android:layout_marginLeft="10dp"
+            android:layout_toRightOf="@+id/tvRemaining_label"
+            android:layout_alignTop="@+id/tvRemaining_label"
+            android:text="Time"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/tvVideoLen_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="70dp"
+            android:layout_marginRight="20dp"
+            android:layout_toLeftOf="@+id/tvVideoLen"
+            android:text="Video:"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/tvVideoLen"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="70dp"
+            android:layout_marginRight="15dp"
+            android:layout_alignParentRight="true"
+            android:text="Time"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/tvBattery_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:layout_toRightOf="@+id/tvCount"
-            android:text="TextView"
+            android:layout_marginRight="10dp"
+            android:layout_toLeftOf="@+id/tvBattery"
+            android:text="Battery:"
             android:textSize="30sp" />
 
         <TextView
@@ -46,60 +96,103 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentRight="true"
-            android:layout_alignTop="@+id/tvCount"
-            android:layout_marginBottom="10dp"
-            android:layout_marginRight="10dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginRight="15dp"
+            android:text="-- %"
+            android:textSize="30sp" />
+
+        <TextView
+            android:id="@+id/tvAperature_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="70dp"
+            android:layout_marginLeft="15dp"
+            android:layout_alignTop="@+id/tvRemaining_label"
+            android:text="F"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/tvAperature"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_alignTop="@+id/tvAperature_label"
+            android:layout_toRightOf="@+id/tvAperature_label"
+            android:text="-"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/tvShutterSpeed_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="25dp"
+            android:layout_alignTop="@+id/tvAperature"
+            android:layout_toRightOf="@+id/tvAperature"
+            android:text="SS"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/tvShutterSpeed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_alignTop="@+id/tvShutterSpeed_label"
+            android:layout_toRightOf="@+id/tvShutterSpeed_label"
+            android:text="-"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/tvIso_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="25dp"
+            android:layout_alignTop="@+id/tvShutterSpeed"
+            android:layout_toRightOf="@+id/tvShutterSpeed"
+            android:text="Set-ISO"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/tvIso"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@+id/tvIso_label"
+            android:layout_marginLeft="10dp"
             android:layout_marginTop="0dp"
-            android:textSize="40sp" />
+            android:layout_toRightOf="@+id/tvIso_label"
+            android:text="-"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/tvLastIso_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="15dp"
+            android:layout_marginTop="45dp"
+            android:layout_alignTop="@+id/tvAperature_label"
+            android:text="Prv Img ISO"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/tvLastIso"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_alignTop="@+id/tvLastIso_label"
+            android:layout_toRightOf="@+id/tvLastIso_label"
+            android:text="-"
+            android:textSize="20sp" />
+
     </RelativeLayout>
 
     <LinearLayout
         android:id="@+id/llEnd"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="75sp"
+        android:layout_height="129dp"
+        android:layout_marginTop="190sp"
         android:orientation="vertical"
         android:paddingLeft="20dp"
         android:paddingRight="20dp"
         android:visibility="invisible">
-
-        <TextView
-            android:id="@+id/textView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Press MENU to exit"
-            android:textSize="20sp" />
-
-        <TextView
-            android:id="@+id/textView2"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:text="Please think about a small donation if you like it :)"
-            android:textSize="20sp" />
-
-        <TextView
-            android:id="@+id/textView5"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="PayPal: mail@jonasjuffinger.com"
-            android:textSize="22sp" />
-
-        <TextView
-            android:id="@+id/textView3"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:text="You can also follow me on Instagram to miss no updates or show me what you have created."
-            android:textSize="20dp" />
-
-        <TextView
-            android:id="@+id/textView6"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@jonas.juffinger"
-            android:textSize="22sp" />
-
     </LinearLayout>
 
 </FrameLayout>
