@@ -1,4 +1,8 @@
 # TimeLapse
+
+Forked version of [jonasjuffinger](https://github.com/jonasjuffinger)'s TimeLapse App for Sony Cameras. This version adds control of Aperture and Shutter Speed while capturing a TimeLapse. The aperture can be controlled with the C1 and C2 buttons. With the left and right buttons, the shutter speed can be controlled. Alternatively, the upper and lower dial works too but on my Camera, the control was very unresponsive.
+
+
 A time lapse app for Sony Alpha cameras using the [OpenMemories: Framework](https://github.com/ma1co/OpenMemories-Framework).
 
 I have only a a6300 to test it, if you have another camera I would be happy to receive bug reports.
