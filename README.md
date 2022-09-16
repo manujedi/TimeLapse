@@ -1,5 +1,5 @@
 This is a simple modification for me as i don't need BRC3 and burst shooting so i removed them. I added manuall control for ISO, Exp. and Aperture.
-It is not bug free and only works if the manual mode is set in the camera ("M")
+It is not bug free and only works if the manual mode is set ("M")
 Also it has a finer control for time and shots
 
 ![Screenshot](image/screenshot.png)
