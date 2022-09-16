@@ -3,7 +3,7 @@ It is not bug free and only works if the manual mode is set in the camera ("M")
 
 ![Screenshot](image/screenshot.png)
 
-
+The UI is not always updated correctly, use the refresh button!
 
 # TimeLapse
 

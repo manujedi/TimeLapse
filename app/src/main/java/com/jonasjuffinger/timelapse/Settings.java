@@ -13,29 +13,37 @@ import static android.preference.PreferenceManager.getDefaultSharedPreferences;
  */
 
 class Settings {
-    private static final String EXTRA_INTERVAL = "com.jonasjuffinger.timelapse.INTERVAL";
+    private static final String EXTRA_MINUTES = "com.jonasjuffinger.timelapse.MINUTES";
+    private static final String EXTRA_SECONDS = "com.jonasjuffinger.timelapse.SECONDS";
     private static final String EXTRA_SHOTCOUNT = "com.jonasjuffinger.timelapse.SHOTCOUNT";
     private static final String EXTRA_DELAY = "com.jonasjuffinger.timelapse.DELAY";
     private static final String EXTRA_DISPLAYOFF = "com.jonasjuffinger.timelapse.DISPLAYOFF";
     private static final String EXTRA_SILENTSHUTTER = "com.jonasjuffinger.timelapse.SILENTSHUTTER";
     private static final String EXTRA_AEL = "com.jonasjuffinger.timelapse.AEL";
-    private static final String EXTRA_BRS = "com.jonasjuffinger.timelapse.BRS";
     private static final String EXTRA_MF = "com.jonasjuffinger.timelapse.MF";
+    private static final String EXTRA_ISO = "com.jonasjuffinger.timelapse.ISO";
+    private static final String EXTRA_AP = "com.jonasjuffinger.timelapse.AP";
+    private static final String EXTRA_EXP_NUM = "com.jonasjuffinger.timelapse.EXP_NUM";
+    private static final String EXTRA_EXP_DEN = "com.jonasjuffinger.timelapse.EXP_DEN";
 
-    double interval;
+    int minutes, seconds;
     int delay;
-    int rawInterval, rawDelay;
+    int rawDelay;
     int shotCount, rawShotCount;
     boolean displayOff;
     boolean silentShutter;
     boolean ael;
-    int fps;    // index
-    boolean brs;
     boolean mf;
 
+    int iso;
+    int aperture;
+    int exposure_num; //numerator
+    int exposure_den; //denominator
+
+
     Settings() {
-        interval = 1;
-        rawInterval = 1;
+        minutes = 1;
+        seconds = 1;
         delay = 0;
         rawDelay = 0;
         shotCount = 1;
@@ -43,43 +51,59 @@ class Settings {
         displayOff = false;
         silentShutter = true;
         ael = true;
-        fps = 0;
-        brs = true;
         mf = true;
+        iso = 100;
+        aperture = 710;
+        exposure_num = 1;
+        exposure_den = 1;
     }
 
-    public Settings(double interval, int shotCount, int delay, boolean displayOff, boolean silentShutter, boolean ael, boolean brs, boolean mf) {
-        this.interval = interval;
+    public Settings(int minutes, int seconds, int shotCount, int delay, boolean displayOff, boolean silentShutter, boolean ael, boolean mf, int iso, int aperture, int exposure_num, int exposure_den) {
+        this.minutes = minutes;
+        this.seconds = seconds;
         this.delay = delay;
         this.shotCount = shotCount;
         this.displayOff = displayOff;
         this.silentShutter = silentShutter;
         this.ael = ael;
-        this.brs = brs;
         this.mf = mf;
+        this.iso = iso;
+        this.aperture = aperture;
+        this.exposure_num = exposure_num;
+        this.exposure_den = exposure_den;
+
     }
 
     void putInIntent(Intent intent) {
-        intent.putExtra(EXTRA_INTERVAL, interval);
+        intent.putExtra(EXTRA_MINUTES, minutes);
+        intent.putExtra(EXTRA_SECONDS, seconds);
         intent.putExtra(EXTRA_SHOTCOUNT, shotCount);
         intent.putExtra(EXTRA_DELAY, delay);
         intent.putExtra(EXTRA_DISPLAYOFF, displayOff);
         intent.putExtra(EXTRA_SILENTSHUTTER, silentShutter);
         intent.putExtra(EXTRA_AEL, ael);
-        intent.putExtra(EXTRA_BRS, brs);
+        intent.putExtra(EXTRA_MF, mf);
+        intent.putExtra(EXTRA_MF, mf);
+        intent.putExtra(EXTRA_MF, mf);
+        intent.putExtra(EXTRA_MF, mf);
         intent.putExtra(EXTRA_MF, mf);
     }
 
     static Settings getFromIntent(Intent intent) {
         return new Settings(
-                intent.getDoubleExtra(EXTRA_INTERVAL, 1),
+                intent.getIntExtra(EXTRA_MINUTES, 1),
+                intent.getIntExtra(EXTRA_SECONDS, 1),
                 intent.getIntExtra(EXTRA_SHOTCOUNT, 1),
                 intent.getIntExtra(EXTRA_DELAY, 1),
                 intent.getBooleanExtra(EXTRA_DISPLAYOFF, false),
                 intent.getBooleanExtra(EXTRA_SILENTSHUTTER, true),
                 intent.getBooleanExtra(EXTRA_AEL, false),
-                intent.getBooleanExtra(EXTRA_BRS, false),
-                intent.getBooleanExtra(EXTRA_MF, true)
+                intent.getBooleanExtra(EXTRA_MF, true),
+                intent.getIntExtra(EXTRA_ISO, 100),
+                intent.getIntExtra(EXTRA_AP, 500),
+                intent.getIntExtra(EXTRA_EXP_NUM, 1),
+                intent.getIntExtra(EXTRA_EXP_DEN, 320)
+
         );
     }
 
@@ -87,29 +111,33 @@ class Settings {
     {
         SharedPreferences sharedPref = getDefaultSharedPreferences(context);
         SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putInt("interval", rawInterval);
         editor.putInt("shotCount", rawShotCount);
         editor.putInt("delay", rawDelay);
         editor.putBoolean("silentShutter", silentShutter);
         editor.putBoolean("ael", ael);
-        editor.putInt("fps", fps);
-        editor.putBoolean("brs", brs);
         editor.putBoolean("mf", mf);
         editor.putBoolean("displayOff", displayOff);
+        editor.putInt("iso", iso);
+        editor.putInt("aperture", aperture);
+        editor.putInt("exposure_num", exposure_num);
+        editor.putInt("exposure_den", exposure_den);
+
         editor.apply();
     }
 
     void load(Context context)
     {
         SharedPreferences sharedPref = getDefaultSharedPreferences(context);
-        rawInterval = sharedPref.getInt("interval", rawInterval);
         rawShotCount = sharedPref.getInt("shotCount", rawShotCount);
         rawDelay = sharedPref.getInt("delay", rawDelay);
         silentShutter = sharedPref.getBoolean("silentShutter", silentShutter);
         ael = sharedPref.getBoolean("ael", ael);
-        fps = sharedPref.getInt("fps", fps);
-        brs = sharedPref.getBoolean("brs", brs);
         mf = sharedPref.getBoolean("mf", mf);
         displayOff = sharedPref.getBoolean("displayOff", displayOff);
+        iso = sharedPref.getInt("iso", iso);
+        aperture = sharedPref.getInt("aperture", aperture);
+        exposure_num = sharedPref.getInt("exposure_num", exposure_num);
+        exposure_den = sharedPref.getInt("exposure_den", exposure_den);
+
     }
 }
