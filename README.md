@@ -1,3 +1,10 @@
+This is a simple modification for me as i don't need BRC3 and burst shooting so i removed them. I added manuall control for ISO, Exp. and Aperture.
+It is not bug free and only works if the manual mode is set in the camera ("M")
+
+![Screenshot](image/screenshot.png)
+
+
+
 # TimeLapse
 
 Forked version of [jonasjuffinger](https://github.com/jonasjuffinger)'s TimeLapse App for Sony Cameras. This version adds control of Aperture and Shutter Speed while capturing a TimeLapse. The aperture can be controlled with the C1 and C2 buttons. With the left and right buttons, the shutter speed can be controlled. Alternatively, the upper and lower dial works too but on my Camera, the control was very unresponsive.
